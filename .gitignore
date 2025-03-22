@@ -64,3 +64,10 @@ firebase-debug.*.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Environment files
+.env.*
+!.env.example
+
+# Build
+.vercel

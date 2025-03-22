@@ -1,54 +1,55 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 
 type SortDirection = 'asc' | 'desc';
 
-interface UseSortProps<T> {
-  data: T[];
-  defaultSortKey?: keyof T;
-  defaultDirection?: SortDirection;
+interface SortConfig {
+  key: string;
+  direction: SortDirection;
 }
 
-interface UseSortReturn<T> {
-  sortedData: T[];
-  sortKey: keyof T | null;
-  sortDirection: SortDirection;
-  setSortKey: (key: keyof T) => void;
-  toggleSortDirection: () => void;
-}
+export function useSort<T extends Record<string, any>>(initialData: T[]) {
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [data, setData] = useState<T[]>(initialData);
 
-export function useSort<T>({
-  data,
-  defaultSortKey,
-  defaultDirection = 'asc'
-}: UseSortProps<T>): UseSortReturn<T> {
-  const [sortKey, setSortKey] = useState<keyof T | null>(defaultSortKey || null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(defaultDirection);
+  const sortData = useCallback((items: T[], key: string, direction: SortDirection) => {
+    return [...items].sort((a, b) => {
+      const aValue = a[key];
+      const bValue = b[key];
 
-  const sortedData = useMemo(() => {
-    if (!sortKey) return data;
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
 
-    return [...data].sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return direction === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
 
-      if (aValue === bValue) return 0;
-      if (aValue === null) return 1;
-      if (bValue === null) return -1;
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return direction === 'asc'
+          ? aValue - bValue
+          : bValue - aValue;
+      }
 
-      const result = aValue < bValue ? -1 : 1;
-      return sortDirection === 'asc' ? result : -result;
+      return 0;
     });
-  }, [data, sortKey, sortDirection]);
+  }, []);
 
-  const toggleSortDirection = () => {
-    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-  };
+  const requestSort = useCallback((key: string) => {
+    let direction: SortDirection = 'asc';
+
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+
+    setSortConfig({ key, direction });
+    setData(prevData => sortData(prevData, key, direction));
+  }, [sortConfig, sortData]);
 
   return {
-    sortedData,
-    sortKey,
-    sortDirection,
-    setSortKey,
-    toggleSortDirection
+    items: data,
+    setItems: setData,
+    sortConfig,
+    requestSort,
   };
 }

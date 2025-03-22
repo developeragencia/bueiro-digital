@@ -126,4 +126,81 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE.md](LICENSE.md) p
 
 - Email: suporte@bueirodigital.com.br
 - Twitter: [@bueirodigital](https://twitter.com/bueirodigital)
-- Website: [bueirodigital.com.br](https://bueirodigital.com.br) 
+- Website: [bueirodigital.com.br](https://bueirodigital.com.br)
+
+## Implantação
+
+### Vercel
+
+1. Faça fork deste repositório
+2. Crie uma nova conta na [Vercel](https://vercel.com) se ainda não tiver uma
+3. Importe o projeto do GitHub
+4. Configure as variáveis de ambiente:
+   - `VITE_API_URL`: URL da sua API em produção
+   - `VITE_WEBHOOK_URL`: URL do webhook em produção
+5. Clique em "Deploy"
+
+A Vercel irá automaticamente:
+- Detectar que é um projeto Vite + React
+- Instalar as dependências
+- Construir o projeto
+- Fazer o deploy da aplicação
+
+### Desenvolvimento Local
+
+1. Clone o repositório
+2. Instale as dependências:
+```bash
+npm install
+```
+
+3. Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
+
+4. Configure as variáveis de ambiente no arquivo `.env`
+
+5. Inicie o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+
+### Scripts Disponíveis
+
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Constrói o projeto para produção
+- `npm run preview` - Visualiza a build de produção localmente
+- `npm run lint` - Executa o linter
+- `npm test` - Executa os testes
+- `npm run test:watch` - Executa os testes em modo watch
+- `npm run test:coverage` - Gera relatório de cobertura de testes
+
+### Tecnologias
+
+- React
+- TypeScript
+- Vite
+- TailwindCSS
+- React Query
+- React Router DOM
+- React Hook Form
+- Zod
+- Jest
+- React Testing Library
+
+### Estrutura do Projeto
+
+```
+src/
+  ├── components/     # Componentes reutilizáveis
+  ├── contexts/      # Contextos React
+  ├── hooks/         # Hooks customizados
+  ├── lib/           # Utilitários e configurações
+  ├── pages/         # Componentes de página
+  └── types/         # Definições de tipos TypeScript
+```
+
+### Licença
+
+MIT 

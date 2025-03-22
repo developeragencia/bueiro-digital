@@ -9,7 +9,6 @@ import {
   Mail
 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -80,18 +79,23 @@ export default function Settings() {
   const loadSettings = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .single();
+      const response = await fetch('/api/settings', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to load settings');
+      }
+
+      const data = await response.json();
       if (data) {
         setSettings(data.settings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
-      toast.error('Failed to load settings');
+      toast.error('Falha ao carregar configurações');
     } finally {
       setIsLoading(false);
     }
@@ -100,18 +104,26 @@ export default function Settings() {
   const saveSettings = async () => {
     try {
       setIsSaving(true);
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({ 
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
           type: 'main',
-          settings 
-        });
+          settings
+        })
+      });
 
-      if (error) throw error;
-      toast.success('Settings saved successfully');
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      toast.success('Configurações salvas com sucesso');
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      toast.error('Falha ao salvar configurações');
     } finally {
       setIsSaving(false);
     }
