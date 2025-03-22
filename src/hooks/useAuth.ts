@@ -1,35 +1,61 @@
 import { useState, useEffect } from 'react';
-import { auth } from '../config/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { FacebookAuthService } from '../services/auth/FacebookAuthService';
+import { AuthService } from '../services/auth/AuthService';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export function useAuth() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const facebookAuth = new FacebookAuthService(auth);
+  const authService = new AuthService();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const validateAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const userData = await authService.validateToken(token);
+          setUser(userData);
+        } catch (error) {
+          console.error('Erro ao validar token:', error);
+          localStorage.removeItem('auth_token');
+        }
+      }
       setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    validateAuth();
   }, []);
 
-  const signInWithFacebook = async () => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const result = await facebookAuth.signInWithFacebook();
-      return result;
+      const { token, user } = await authService.login(email, password);
+      localStorage.setItem('auth_token', token);
+      setUser(user);
     } catch (error) {
-      console.error('Erro no login com Facebook:', error);
+      console.error('Erro no login:', error);
+      throw error;
+    }
+  };
+
+  const signUp = async (name: string, email: string, password: string) => {
+    try {
+      const { token, user } = await authService.register(name, email, password);
+      localStorage.setItem('auth_token', token);
+      setUser(user);
+    } catch (error) {
+      console.error('Erro no registro:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      await authService.logout();
+      setUser(null);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       throw error;
@@ -39,7 +65,8 @@ export function useAuth() {
   return {
     user,
     loading,
-    signInWithFacebook,
+    signIn,
+    signUp,
     signOut,
   };
 } 

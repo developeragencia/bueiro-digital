@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { authRequest } from './api';
 
 export interface IntegrationSettings {
   id: string;
@@ -104,34 +104,19 @@ export const INTEGRATION_CONFIGS: Record<string, IntegrationConfig> = {
 
 export async function saveIntegrationSettings(platform: string, settings: any) {
   try {
-    const { data: existingSettings, error: fetchError } = await supabase
-      .from('integration_settings')
-      .select('*')
-      .eq('platform', platform)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
+    const existingSettings = await getIntegrationSettings(platform);
 
     if (existingSettings) {
-      const { data, error: updateError } = await supabase
-        .from('integration_settings')
-        .update({ settings })
-        .eq('id', existingSettings.id)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
-      return data;
+      return await authRequest(`/integrations/${existingSettings.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ settings })
+      });
     }
 
-    const { data, error: insertError } = await supabase
-      .from('integration_settings')
-      .insert([{ platform, settings }])
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-    return data;
+    return await authRequest('/integrations', {
+      method: 'POST',
+      body: JSON.stringify({ platform, settings })
+    });
   } catch (error) {
     console.error('Error saving integration settings:', error);
     throw new Error('Failed to save integration settings');
@@ -140,14 +125,7 @@ export async function saveIntegrationSettings(platform: string, settings: any) {
 
 export async function getIntegrationSettings(platform: string) {
   try {
-    const { data, error } = await supabase
-      .from('integration_settings')
-      .select('*')
-      .eq('platform', platform)
-      .maybeSingle();
-
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    return await authRequest(`/integrations/${platform}`);
   } catch (error) {
     console.error('Error getting integration settings:', error);
     return null;

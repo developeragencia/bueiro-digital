@@ -1,63 +1,41 @@
-import { supabase } from './supabase';
-
 // Generic error handler
 const handleError = (error: any) => {
   console.error('API Error:', error);
   throw new Error(error.message || 'An unexpected error occurred');
 };
 
-// Authentication
-export const auth = {
-  signIn: async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-    }
-  },
+const baseUrl = process.env.REACT_APP_API_URL || '';
 
-  signUp: async (email: string, password: string, metadata: any) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata
-        }
-      });
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleError(error);
-    }
-  },
+// Helper function to get auth token
+const getAuthToken = () => localStorage.getItem('auth_token');
 
-  signOut: async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      handleError(error);
+// Helper function to make authenticated requests
+const authRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getAuthToken();
+  if (!token) throw new Error('No authentication token found');
+
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     }
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'An unexpected error occurred' }));
+    throw new Error(error.message);
   }
+
+  return response.json();
 };
 
 // Profiles
 export const profiles = {
   get: async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (error) throw error;
-      return data;
+      return await authRequest(`/profiles/${userId}`);
     } catch (error) {
       handleError(error);
     }
@@ -65,14 +43,10 @@ export const profiles = {
 
   update: async (userId: string, updates: any) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return await authRequest(`/profiles/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
     } catch (error) {
       handleError(error);
     }
@@ -83,13 +57,7 @@ export const profiles = {
 export const dashboards = {
   list: async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('dashboards')
-        .select('*')
-        .eq('created_by', userId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      return await authRequest(`/dashboards?userId=${userId}`);
     } catch (error) {
       handleError(error);
     }
@@ -97,13 +65,10 @@ export const dashboards = {
 
   create: async (dashboard: any) => {
     try {
-      const { data, error } = await supabase
-        .from('dashboards')
-        .insert([dashboard])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return await authRequest('/dashboards', {
+        method: 'POST',
+        body: JSON.stringify(dashboard)
+      });
     } catch (error) {
       handleError(error);
     }
@@ -111,14 +76,10 @@ export const dashboards = {
 
   update: async (id: string, updates: any) => {
     try {
-      const { data, error } = await supabase
-        .from('dashboards')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return await authRequest(`/dashboards/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
     } catch (error) {
       handleError(error);
     }
@@ -126,11 +87,9 @@ export const dashboards = {
 
   delete: async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('dashboards')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await authRequest(`/dashboards/${id}`, {
+        method: 'DELETE'
+      });
     } catch (error) {
       handleError(error);
     }
@@ -141,12 +100,7 @@ export const dashboards = {
 export const integrations = {
   list: async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('integration_settings')
-        .select('*')
-        .eq('created_by', userId);
-      if (error) throw error;
-      return data;
+      return await authRequest(`/integrations?userId=${userId}`);
     } catch (error) {
       handleError(error);
     }
@@ -154,14 +108,7 @@ export const integrations = {
 
   get: async (platform: string, userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('integration_settings')
-        .select('*')
-        .eq('platform', platform)
-        .eq('created_by', userId)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return await authRequest(`/integrations/${platform}?userId=${userId}`);
     } catch (error) {
       handleError(error);
     }
@@ -169,13 +116,10 @@ export const integrations = {
 
   save: async (settings: any) => {
     try {
-      const { data, error } = await supabase
-        .from('integration_settings')
-        .upsert(settings)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return await authRequest('/integrations', {
+        method: 'POST',
+        body: JSON.stringify(settings)
+      });
     } catch (error) {
       handleError(error);
     }
@@ -183,11 +127,9 @@ export const integrations = {
 
   delete: async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('integration_settings')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await authRequest(`/integrations/${id}`, {
+        method: 'DELETE'
+      });
     } catch (error) {
       handleError(error);
     }

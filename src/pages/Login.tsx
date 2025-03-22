@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, ArrowLeft, Sparkles } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
 import Logo from '../components/Logo';
 
 export default function Login() {
@@ -31,25 +31,6 @@ export default function Login() {
     } catch (err) {
       setError('Email ou senha inválidos');
       setPassword('');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (type: 'admin' | 'user') => {
-    if (isLoading) return;
-
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const credentials = type === 'admin' 
-        ? { email: 'admin@example.com', password: 'admin' }
-        : { email: 'user@example.com', password: 'user' };
-      
-      await login(credentials.email, credentials.password);
-    } catch (err) {
-      setError('Erro ao fazer login com conta demo');
     } finally {
       setIsLoading(false);
     }
@@ -173,30 +154,12 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="relative w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-75 disabled:cursor-not-allowed group"
+                className="relative w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-75 disabled:cursor-not-allowed"
               >
                 <span className="flex items-center">
-                  {isLoading ? 'Entrando...' : (
-                    <>
-                      Entrar
-                      <Sparkles className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </>
-                  )}
+                  {isLoading ? 'Entrando...' : 'Entrar'}
                 </span>
               </button>
-            </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    Não tem uma conta?
-                  </span>
-                </div>
-              </div>
 
               <div className="mt-6 text-center">
                 <Link
@@ -206,41 +169,7 @@ export default function Login() {
                   Cadastre-se gratuitamente
                 </Link>
               </div>
-
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    Credenciais de teste
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-gray-600">
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('admin')}
-                  disabled={isLoading}
-                  className="bg-gray-50/80 backdrop-blur p-3 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-md text-left disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  <p className="font-semibold text-gray-900">Admin:</p>
-                  <p>admin@example.com</p>
-                  <p>senha: admin</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('user')}
-                  disabled={isLoading}
-                  className="bg-gray-50/80 backdrop-blur p-3 rounded-lg transition-all duration-300 hover:bg-gray-50 hover:shadow-md text-left disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  <p className="font-semibold text-gray-900">Usuário:</p>
-                  <p>user@example.com</p>
-                  <p>senha: user</p>
-                </button>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

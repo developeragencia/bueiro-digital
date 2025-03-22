@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { useToast } from '../hooks/use-toast';
+import { AuthService } from '../services/auth/AuthService';
 
 interface User {
   id: string;
@@ -57,6 +57,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const navigate = useNavigate();
   const toast = useToast();
+  const authService = new AuthService();
+
+  useEffect(() => {
+    const validateAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const userData = await authService.validateToken(token);
+          setUser(userData);
+        } catch (error) {
+          console.error('Erro ao validar token:', error);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
+    };
+
+    validateAuth();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -86,35 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // If not demo user, try Supabase auth
-      const { data: { user: authUser }, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (signInError) throw signInError;
-      if (!authUser) throw new Error('No user returned after login');
-
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) throw profileError;
-      if (!profile) throw new Error('No profile found');
-
-      const userData: User = {
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role
-      };
-
+      // If not demo user, try API auth
+      const { token, user: userData } = await authService.login(email, password);
+      localStorage.setItem('auth_token', token);
       setUser(userData);
       toast.success('Login realizado com sucesso!');
-
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Email ou senha inválidos');
@@ -124,43 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     try {
-      const { data: { user: authUser }, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: 'user'
-          }
-        }
-      });
-
-      if (signUpError) throw signUpError;
-      if (!authUser) throw new Error('No user returned after registration');
-
-      // Wait for profile to be created by the trigger
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Fetch the created profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      if (profileError) throw profileError;
-      if (!profile) throw new Error('No profile found');
-
-      const userData: User = {
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role
-      };
-
+      const { token, user: userData } = await authService.register(name, email, password);
+      localStorage.setItem('auth_token', token);
       setUser(userData);
       toast.success('Conta criada com sucesso!');
-
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('Erro ao criar conta. Tente novamente.');
@@ -172,28 +135,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('No user logged in');
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.name,
-          email: data.email
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      setUser(prev => prev ? { ...prev, ...data } : null);
+      const updatedUser = await authService.updateProfile(user.id, data);
+      setUser(updatedUser);
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
       console.error('Update profile error:', error);
       toast.error('Erro ao atualizar perfil');
       throw error;
     }
-  }, [user, toast]);
+  }, [user, toast, authService]);
 
   const logout = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      await authService.logout();
       setUser(null);
       localStorage.removeItem('user');
       navigate('/', { replace: true });

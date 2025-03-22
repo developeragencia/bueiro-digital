@@ -7,7 +7,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithFacebook } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,21 +16,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Implementar login com email/senha
+      await login(email, password);
       navigate('/dashboard');
     } catch (error) {
       setError('Erro ao fazer login. Verifique suas credenciais.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    try {
-      await signInWithFacebook();
-      navigate('/dashboard');
-    } catch (error) {
-      setError('Erro ao fazer login com Facebook.');
     }
   };
 
@@ -98,29 +89,6 @@ export default function Login() {
             </button>
           </div>
         </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Ou continue com</span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={handleFacebookLogin}
-              className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#1877F2] hover:bg-[#166FE5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1877F2]"
-            >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Entrar com Facebook
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

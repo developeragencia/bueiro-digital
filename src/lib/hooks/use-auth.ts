@@ -1,8 +1,8 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabase';
 import { useToast } from './use-toast';
 import { type User } from '../types';
+import { authRequest } from '../api';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -11,54 +11,34 @@ export function useAuth() {
   const toast = useToast();
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUser(session.user.id);
+    const validateAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const userData = await authRequest('/auth/validate');
+          setUser(userData);
+        } catch (error) {
+          console.error('Error validating token:', error);
+          localStorage.removeItem('auth_token');
+          setUser(null);
+        }
       }
       setLoading(false);
-    });
+    };
 
-    // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchUser(session.user.id);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    validateAuth();
   }, []);
-
-  const fetchUser = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      setUser(data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      setUser(null);
-    }
-  };
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const response = await authRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error('No user returned');
-
-      await fetchUser(data.user.id);
+      const { token, user: userData } = response;
+      localStorage.setItem('auth_token', token);
+      setUser(userData);
       navigate('/dashboard');
       toast.success('Login realizado com sucesso!');
     } catch (error) {
@@ -70,21 +50,14 @@ export function useAuth() {
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: 'user'
-          }
-        }
+      const response = await authRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password })
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error('No user returned');
-
-      await fetchUser(data.user.id);
+      const { token, user: userData } = response;
+      localStorage.setItem('auth_token', token);
+      setUser(userData);
       navigate('/dashboard');
       toast.success('Conta criada com sucesso!');
     } catch (error) {
@@ -96,7 +69,8 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      await authRequest('/auth/logout', { method: 'POST' });
+      localStorage.removeItem('auth_token');
       setUser(null);
       navigate('/login');
       toast.success('Logout realizado com sucesso!');
@@ -111,14 +85,12 @@ export function useAuth() {
     if (!user?.id) throw new Error('No user logged in');
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+      const updatedUser = await authRequest(`/auth/profile/${user.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      });
 
-      if (error) throw error;
-
-      setUser(prev => prev ? { ...prev, ...updates } : null);
+      setUser(updatedUser);
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
       console.error('Update profile error:', error);
