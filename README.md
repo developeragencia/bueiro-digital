@@ -1,6 +1,6 @@
 # Bueiro Digital
 
-Sistema de integração com múltiplas plataformas de pagamento, construído com React, TypeScript e Firebase.
+Sistema de integração com múltiplas plataformas de pagamento, construído com React e TypeScript.
 
 ## 🚀 Features
 
@@ -18,7 +18,6 @@ Sistema de integração com múltiplas plataformas de pagamento, construído com
 - React 18
 - TypeScript 4.9+
 - Vite
-- Firebase
 - TailwindCSS
 - React Query
 - React Hook Form
@@ -59,7 +58,7 @@ Sistema de integração com múltiplas plataformas de pagamento, construído com
 
 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/bueiro-digital.git
+git clone https://github.com/developeragencia/bueiro-digital.git
 cd bueiro-digital
 ```
 
@@ -107,10 +106,9 @@ npm run preview
 
 O projeto está configurado para deploy automático na Vercel.
 
-1. Faça fork do repositório
-2. Conecte com sua conta Vercel
-3. Configure as variáveis de ambiente na Vercel
-4. Deploy!
+1. Conecte com sua conta Vercel
+2. Configure as variáveis de ambiente necessárias
+3. Deploy!
 
 ## 📝 Licença
 
